@@ -716,6 +716,7 @@ public sealed class AutoDuty : IDalamudPlugin
     private void DutyState_DutyRecommenced(object? sender, ushort e) => this.dutyState = DutyState.DutyRecommenced;
     private void DutyState_DutyCompleted(object? sender, ushort e)
     {
+        Svc.Log.Warning("Duty Done");
         this.dutyState = DutyState.DutyComplete;
         if(this.states is not (PluginState.None or PluginState.Paused))
         {
@@ -1070,12 +1071,12 @@ public sealed class AutoDuty : IDalamudPlugin
         if (this.currentLoop == 0)
         {
             this.currentLoop = 1;
-            if (Configuration.AutoDutyModeEnum == AutoDutyMode.Playlist) 
+            if (Configuration.AutoDutyModeEnum == AutoDutyMode.Playlist)
             {
                 Configuration.LoopTimes = Plugin.PlaylistCurrentEntry?.count ?? Configuration.LoopTimes;
                 Plugin.PlaylistCurrentEntry!.curCount = 0;
+            }
         }
-    }
     }
 
     internal unsafe void LoopTasks(bool queue = true, bool between = true)
@@ -1430,7 +1431,7 @@ public sealed class AutoDuty : IDalamudPlugin
         {
             this.variantManager.RegisterVariantDuty(content);
         }
-        else if (Configuration.DutyModeEnum.EqualsAny(DutyMode.Regular, DutyMode.Trial, DutyMode.Raid, DutyMode.Support, DutyMode.Trust))
+        else if (Configuration.DutyModeEnum.EqualsAny(DutyMode.Regular, DutyMode.Trial, DutyMode.Raid, DutyMode.Support, DutyMode.Trust, DutyMode.NoviceHall))
         {
             this.taskManager.Enqueue(() => QueueHelper.Invoke(content, Configuration.DutyModeEnum), "Queue-Invoke");
             this.taskManager.EnqueueDelay(50);
@@ -1445,7 +1446,7 @@ public sealed class AutoDuty : IDalamudPlugin
         }
 
         this.taskManager.Enqueue(() => !PlayerHelper.IsValid, "Queue-WaitNotValid");
-        this.taskManager.Enqueue(() => PlayerHelper.IsValid, "Queue-WaitValid", new TaskManagerConfiguration(int.MaxValue));
+        this.taskManager.Enqueue(() => PlayerHelper.IsValid,  "Queue-WaitValid", new TaskManagerConfiguration(int.MaxValue));
     }
 
     private void StageReadingPath()
@@ -1470,7 +1471,6 @@ public sealed class AutoDuty : IDalamudPlugin
                     this.bossObject = ObjectHelper.GetBossObject(25);
                     if (this.bossObject != null)
                     {
-
                         if (MultiboxUtility.Config.Host)
                             MultiboxUtility.MultiboxBlockingNextStep = false;
                         this.Stage = Stage.Action;
@@ -1535,7 +1535,7 @@ public sealed class AutoDuty : IDalamudPlugin
             return;
         }
 
-        BossMod_IPCSubscriber.InBoss(this.pathAction.Name.Equals("Boss"));
+        BossMod_IPCSubscriber.InBoss(this.pathAction.Name.Equals("Boss") || this.pathAction.Note.Contains("!TankClose")); //extremely hacky and hopefully short-lived
 
         if(MultiboxUtility.Config.Host)
             MultiboxUtility.MultiboxBlockingNextStep = false;
@@ -1952,17 +1952,17 @@ public sealed class AutoDuty : IDalamudPlugin
 
         bool act = on;
 
-        bool wrathEnabled = Configuration.rotationPlugin is RotationPlugin.WrathCombo or RotationPlugin.All;
+        bool  wrathEnabled = Configuration is { rotationPlugin: RotationPlugin.WrathCombo or RotationPlugin.All, DutyModeEnum: not DutyMode.NoviceHall };
         bool? wrath        = EnableWrath(on && wrathEnabled);
         if (on && wrathEnabled && wrath.HasValue)
             act = !wrath.Value;
         
-        bool rsrEnabled = Configuration.rotationPlugin is RotationPlugin.RotationSolverReborn or RotationPlugin.All;
+        bool  rsrEnabled = Configuration is { rotationPlugin: RotationPlugin.RotationSolverReborn or RotationPlugin.All, DutyModeEnum: not DutyMode.NoviceHall };
         bool? rsr        = EnableRSR(act && on && rsrEnabled);
         if (on && rsrEnabled && rsr.HasValue) 
             act = !rsr.Value;
 
-        EnableBM(on, act && Configuration.rotationPlugin is RotationPlugin.BossMod or RotationPlugin.All);
+        EnableBM(on, act && (Configuration.rotationPlugin is RotationPlugin.BossMod or RotationPlugin.All || Configuration.DutyModeEnum is DutyMode.NoviceHall));
     }
 
     internal static void SetBMSettings(bool defaults = false)

@@ -41,6 +41,7 @@ namespace AutoDuty.Managers
             ("TreasureCoffer","false", "Adds a TreasureCoffer flag to the path; AutoDuty will loot any treasure coffers automatically if it gets within interact range of one (while Config Loop Option is on), this is just a flag to mark the positions of Treasure Coffers.\nNote: AutoDuty will ignore this Path entry when Looting is disabled entirely or Boss Loot Only is enabled.\nExample: TreasureCoffer|3.21, 6.06, -97.63|"),
             ("SelectYesno","yes or no?", "Adds a SelectYesNo step to the path; after moving to the position, AutoDuty will click Yes or No on this addon.\nExample: SelectYesno|9.41, 1.94, -311.25|Yes"),
             ("SelectString", "list index", "Adds a SelectString step to the path; after moving to the position, AutoDuty will pick the indexed string.\nExample: SelectYesno|908.24, 327.26, -561.96|1"),
+            ("SelectJournalResult", "accept?", "Accepts (or declines) a JournalResult.\nExample: SelectJournalResult|908.24, 327.26, -561.96|true"),
             ("MoveToObject","Object Name?", "Adds a MoveToObject step to the path; AutoDuty will will move the object specified (recommend input DataId)"),
             ("DutySpecificCode","step #?", "Adds a DutySpecificCode step to the path; after moving to the position, AutoDuty will invoke the Duty Specific Action for this TerritoryType and the step # specified.\nExample: DutySpecificCode|174.68, 102.00, -66.46|1"),
             ("BossMod", "on / off", "Adds a BossMod step to the path; after moving to the position, AutoDuty will turn BossMod on or off.\nExample: BossMod|-132.08, -342.25, 1.98|Off"),
@@ -198,6 +199,10 @@ namespace AutoDuty.Managers
                                     if (csObj->GetIsTargetable() == (bool.TryParse(conditionArray[3], out bool it) && it))
                                         invokeAction = true;
                                     break;
+                                case "NamePlateIconId":
+                                    if (csObj->NamePlateIconId == (uint.TryParse(conditionArray[3], out uint np) ? np : 0))
+                                        invokeAction = true;
+                                    break; 
                             }
                         }
                     }
@@ -457,12 +462,18 @@ namespace AutoDuty.Managers
         }
         public void SelectString(PathAction action)
         {
-
-
             taskManager.Enqueue(() => Plugin.action = $"SelectString: {action.Arguments[0]}, {action.Note}", "SelectString");
             taskManager.Enqueue(() => AddonHelper.ClickSelectString(Convert.ToInt32(action.Arguments[0])), "SelectString");
             taskManager.EnqueueDelay(500);
             taskManager.Enqueue(() => !IsCasting, "SelectString");
+            taskManager.Enqueue(() => Plugin.action = "");
+        }
+        public void SelectJournalResult(PathAction action)
+        {
+            taskManager.Enqueue(() => Plugin.action = $"JournalResult: {action.Arguments[0]}, {action.Note}", "JournalResult");
+            taskManager.Enqueue(() => AddonHelper.SelectJournalResult(Convert.ToBoolean(action.Arguments[0])), "JournalResult");
+            taskManager.EnqueueDelay(500);
+            taskManager.Enqueue(() => !IsCasting, "JournalResult");
             taskManager.Enqueue(() => Plugin.action = "");
         }
 
