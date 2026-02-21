@@ -28,6 +28,7 @@ namespace AutoDuty.Managers
     using ECommons.ExcelServices;
     using FFXIVClientStructs.FFXIV.Client.Game.Object;
     using System.Reflection;
+    using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
     internal class ActionsManager(AutoDuty plugin, TaskManager taskManager)
     {
@@ -47,6 +48,7 @@ namespace AutoDuty.Managers
             ("BossMod", "on / off", "Adds a BossMod step to the path; after moving to the position, AutoDuty will turn BossMod on or off.\nExample: BossMod|-132.08, -342.25, 1.98|Off"),
             ("Rotation", "on / off", "Adds a Rotation step to the path; after moving to the position, AutoDuty will turn Rotation Plugin on or off.\nExample: Rotation|-132.08, -342.25, 1.98|Off"),
             ("Target", "Target what?", "Adds a Target step to the path; after moving to the position, AutoDuty will Target the object specified (recommend inputing DataId)."),
+            ("KillInRange","Range","Kills every enemy in range"),
             ("AutoMoveFor", "how long?", "Adds an AutoMoveFor step to the path; AutoDuty will turn on Standard Mode and Auto Move for the time specified in milliseconds (or until player is not ready).\nExample: AutoMoveFor|-18.21, 1.61, 114.16|3000"),
             ("ChatCommand","Command with args?", "Adds a ChatCommand step to the path; after moving to the position, AutoDuty will execute the Command specified.\nExample: ChatCommand|-5.86, 164.00, 501.72|/bmrai follow Alisaie"),
             ("StopForCombat","true/false", "Adds a StopForCombat step to the path; after moving to the position, AutoDuty will turn StopForCombat on or off.\nExample: StopForCombat|-1.36, 5.76, -108.78|False"),
@@ -181,6 +183,10 @@ namespace AutoDuty.Managers
                     if (operationResult = operationFunc(itemCount, quantity))
                         invokeAction = true;
                     Svc.Log.Info($"Condition: {itemCount}{operatorValue}{quantity} = {operationResult}");
+                    break;
+                case "ObjectSpawned":
+                    if (conditionArray.Length > 2)
+                        invokeAction = GetObjectByDataId(uint.TryParse(conditionArray[1], out uint dataId) ? dataId : 0) != null == (!bool.TryParse(conditionArray[2], out bool it) || it);
                     break;
                 case "ObjectData":
                     if (conditionArray.Length > 3)
@@ -514,6 +520,45 @@ namespace AutoDuty.Managers
 
             taskManager.Enqueue(() => TryGetObjectByDataId(uint.Parse(objectDataId), out gameObject), "Target-GetGameObject");
             taskManager.Enqueue(() => this.TargetCheck(gameObject),                                   "Target-Check");
+            taskManager.Enqueue(() => Plugin.action = "");
+        }
+
+        public void KillInRange(PathAction action)
+        {
+            if (action.Arguments.Count < 1)
+                return;
+
+            if (!uint.TryParse(action.Arguments[0], out uint range))
+                return;
+            
+            Plugin.action = $"Killing in {range}y";
+
+            taskManager.Enqueue(() =>
+                                {
+                                    if (!EzThrottler.Throttle("KillInRange"))
+                                        return false;
+
+                                    List<IGameObject> gameObjects = Svc.Objects.Where(igo => igo is { ObjectKind: ObjectKind.BattleNpc, IsTargetable: true } && igo.IsHostile() && BelowDistanceToPoint(igo.Position, action.Position, range, range / 2f))
+                                                                              .ToList();
+                                    if (gameObjects.Count == 0)
+                                        return true;
+
+                                    if (Svc.Targets.Target != null && gameObjects.Contains(Svc.Targets.Target))
+                                    {
+                                        if(GetDistanceToPlayer(Svc.Targets.Target) < 30)
+                                            VNavmesh_IPCSubscriber.Path_Stop();
+                                        return false;
+                                    }
+
+                                    IGameObject target = gameObjects.OrderBy(GetDistanceToPlayer).First();
+
+                                    if (this.TargetCheck(target) && GetDistanceToPlayer(target) < 30)
+                                        VNavmesh_IPCSubscriber.Path_Stop();
+                                    else
+                                        VNavmesh_IPCSubscriber.SimpleMove_PathfindAndMoveTo(target.Position, false);
+
+                                    return false;
+                                }, "KillInRange-Main", new TaskManagerConfiguration(int.MaxValue));
             taskManager.Enqueue(() => Plugin.action = "");
         }
 

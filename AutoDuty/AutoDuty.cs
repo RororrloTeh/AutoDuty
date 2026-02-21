@@ -678,24 +678,30 @@ public sealed class AutoDuty : IDalamudPlugin
 
                     for (int index = Math.Clamp(this.indexer, 0, this.Actions.Count-1); index < this.Actions.Count; index++)
                     {
-                        PathAction action = this.Actions[index];
-                        if (action.Position.LengthSquared() > 1)
+                        PathAction curAction = this.Actions[index];
+                        if (curAction.Position.LengthSquared() > 1)
                         {
                             float alpha = MathF.Max(0f, 1f - (index - this.indexer) * stepCountFactor);
 
                             if (alpha > 0)
                             {
-                                drawList.AddCircle(action.Position, 3, ImGui.GetColorU32(new Vector4(1f, 0.2f, 0f, alpha)), 0, 3);
+                                uint mainColor = ImGui.GetColorU32(new Vector4(1f, 0.2f, 0f, alpha));
+                                drawList.AddCircle(curAction.Position, 3, mainColor, 0, 3);
 
                                 if (index > 0)
-                                    drawList.AddLine(lastPos, action.Position, 0f, ImGui.GetColorU32(new Vector4(0.8f, 0.8f, 0.8f, alpha)));
+                                    drawList.AddLine(lastPos, curAction.Position, 0f, ImGui.GetColorU32(new Vector4(0.8f, 0.8f, 0.8f, alpha)));
                                 if (index == this.indexer)
-                                    drawList.AddLine(Player.Position, action.Position, 0, 0x00FFFFFF);
+                                    drawList.AddLine(Player.Position, curAction.Position, 0, 0x00FFFFFF);
 
-                                drawList.AddText(action.Position, ImGui.GetColorU32(new Vector4(alpha + 0.25f)), index.ToString(), 2f);
+                                drawList.AddText(curAction.Position, ImGui.GetColorU32(new Vector4(alpha + 0.25f)), index.ToString(), 2f);
+
+                                if (curAction.Name.Equals("KillInRange") && int.TryParse(curAction.Arguments[0], out int radius) && radius > 0)
+                                {
+                                    uint colorU32 = ImGui.GetColorU32(new Vector4(0.4f, 0.2f, 0f, alpha*0.1f));
+                                    drawList.AddCircleFilled(curAction.Position, radius, colorU32, mainColor);
+                                }
                             }
-
-                            lastPos = action.Position;
+                            lastPos = curAction.Position;
                         }
                     }
                 }
