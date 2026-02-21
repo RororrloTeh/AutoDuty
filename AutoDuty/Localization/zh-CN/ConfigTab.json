@@ -260,14 +260,14 @@
         "Tuliyollal": "图莱尤拉",
         "Nexus_Arcade": "九号解决方案"
       },
-      "DesynthCategory": {
-        "Inventory_Equipment": "背包: 装备",
-        "Inventory_Housing": "背包: 家具/庭具",
-        "Armoury_Main_Off": "兵装库: 主手/副手",
-        "Armoury_Head_Body_Hands": "兵装库: 头/身/手",
-        "Armoury_Legs_Feet": "兵装库: 腿/脚",
-        "Armoury_Neck_Ears": "兵装库: 项链/耳环",
-        "Armoury_Wrists_Rings": "兵装库: 手镯/戒指",
+      "SalvageItemCategory": {
+        "InventoryEquipment": "背包: 装备",
+        "InventoryHousing": "背包: 家具/庭具",
+        "ArmouryMainOff": "兵装库: 主手/副手",
+        "ArmouryHeadBodyHands": "兵装库: 头/身/手",
+        "ArmouryLegsFeet": "兵装库: 腿/脚",
+        "ArmouryNeckEars": "兵装库: 项链/耳环",
+        "ArmouryWristsRings": "兵装库: 手镯/戒指",
         "Equipped": "当前已装备"
       },
       "TerminationMode": {
