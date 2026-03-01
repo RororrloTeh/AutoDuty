@@ -52,7 +52,8 @@
       "Regular": "ダンジョン",
       "Trial": "討滅戦",
       "Raid": "レイド",
-      "Variant": "ヴァリアントダンジョン"
+      "Variant": "ヴァリアントダンジョン",
+      "NoviceHall": "初心者の館"
     },
     "LevelingModes": {
       "None": "なし",
