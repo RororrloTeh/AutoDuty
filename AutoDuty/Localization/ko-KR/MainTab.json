@@ -42,7 +42,8 @@
     "RequiresBossModAlt": "AutoDuty로 기믹을 처리하려면 BossMod 플러그인 설치 및 로딩이 필요합니다. 3rd party repo를 추가해주세요:\nhttps://puni.sh/api/repository/veyn",
     "Modes": {
       "Looping": "루프",
-      "Playlist": "플레이리스트"
+      "Playlist": "플레이리스트",
+      "NoviceHall": "초보자의 집"
     },
     "DutyModes": {
       "None": "없음",
@@ -52,7 +53,8 @@
       "Regular": "던전",
       "Trial": "토벌전",
       "Raid": "레이드",
-      "Variant": "변형 던전"
+      "Variant": "변형",
+      "NoviceHall": "초보자의 집"
     },
     "LevelingModes": {
       "None": "없음",
